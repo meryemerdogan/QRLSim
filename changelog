@@ -1,0 +1,14 @@
+# Changelog
+
+## [v1.0.0] - 2026-02-03
+### Added
+- Initial release of QRLSim.
+- Implemented `QueueModel.py` with support for:
+  - FIFO, LIFO, and SIRO queue disciplines.
+  - `Markovian` and `Deterministic` distribution classes.
+- Implemented `QRLSimulator.py` with:
+  - Simulation logic for queueing systems.
+  - Support for multiple servers and queue disciplines.
+  - Logging for simulation events.
+- Example usage script in `test.py`.
+- Documentation in `README.md`.
