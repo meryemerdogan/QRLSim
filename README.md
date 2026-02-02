@@ -1,4 +1,4 @@
-# QRLSim: Queueing System Simulation Framework (VERSION 1)
+# QRLSim: Queueing System Simulation Framework (V1.1)
 
 QRLSim is a Python-based simulation framework for modeling and analyzing queueing systems. Especially designed for training RL agents for computer networking problems.
 
