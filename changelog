@@ -1,5 +1,28 @@
 # Changelog
 
+## [v1.1.0] - 2026-02-06
+
+### Added
+- Packaged module structure under `qrlsim/` (including `qrlsim/core/`).
+- `QRLSimulator.step_one_event()` to advance the simulation by a single arrival/service event.
+- Gymnasium environment: `qrlsim/aqm_envs/MM1_env.py` (M/M/1 with keep/drop action).
+- Training scripts: `train/train_dqn.py` (DQN) and `train/train_ppo.py` (PPO) using Stable-Baselines3.
+- Smoke test script: `qrlsim/core/test.py`.
+- Dockerfile placeholder.
+
+### Changed
+- Updated simulator imports to package paths (`from qrlsim.core...`).
+- Refactored terminal simulation loop to call `step_one_event()` each iteration.
+- `_serve()` now only serves when the queue is non-empty and at least one idle server exists.
+- FIFO/LIFO/SIRO serving now explicitly selects an idle server (instead of `argmin` over finish times).
+
+### Fixed
+- Fixed service duration indexing when scheduling service completion (use pre-increment index, then increment counter).
+- Prevented serving attempts when no idle servers are available (early return).
+
+### Removed
+- Removed root-level `QRLSimulator.py`, `QueueModel.py`, and `test.py` (moved into the `qrlsim/` package structure).
+
 ## [v1.0.0] - 2026-02-03
 ### Added
 - Initial release of QRLSim.

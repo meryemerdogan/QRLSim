@@ -1,4 +1,4 @@
-from QueueModel import Discipline, Deterministic, Markovian, Distribution
+from qrlsim.core.QueueModel import Discipline, Deterministic, Markovian, Distribution
 import logging
 import numpy as np
 from collections import deque
@@ -37,30 +37,7 @@ class QRLSimulator:
 
     def _simulate_terminal(self):
         while self.time < self.simulation_time:
-            next_arrival_time = np.inf
-            next_service_finish_time = np.inf
-            if self.arrival_index < len(self.arrival_times):
-                next_arrival_time = self.arrival_times[self.arrival_index]
-            if self.service_finish_times is not None:
-                next_service_finish_time = np.min(self.service_finish_times)
-            if next_arrival_time == np.inf and next_service_finish_time == np.inf:
-                pass # TODO
-            num_of_idle_servers = np.sum(np.array(self.service_finish_times) == np.inf)
-            if num_of_idle_servers == self.num_of_servers:
-                # all servers are free, next event is packet arrival & serve immediately 
-                self._packet_arrival()
-                self._serve()
-            elif next_arrival_time < next_service_finish_time:
-                if next_service_finish_time < np.inf:
-                    # there exists an idle server
-                    self._packet_arrival()
-                    self._serve()
-                else:
-                    # no idle server just add packet and move on
-                    self._packet_arrival()
-            else:
-                self._finish_service()
-                self._serve()
+            self.step_one_event()
 
     def _simulaye_gui(self):
         pass # TODO
@@ -72,14 +49,15 @@ class QRLSimulator:
             self._simulate_terminal()
 
     def _serve(self ):
-        if self.queueDiscipline == Discipline.FIFO:
-            self._serveFIFO()
-        elif self.queueDiscipline == Discipline.LIFO:
-            self._serveLIFO()
-        elif self.queueDiscipline == Discipline.SIRO:
-            self._serveSIRO()
-        else:
-            logging.error("Unknown queue discipline!")
+        if len(self.packets_in_queue) > 0 and np.any(self.service_finish_times == np.inf):
+            if self.queueDiscipline == Discipline.FIFO:
+                self._serveFIFO()
+            elif self.queueDiscipline == Discipline.LIFO:
+                self._serveLIFO()
+            elif self.queueDiscipline == Discipline.SIRO:
+                self._serveSIRO()
+            else:
+                logging.error("Unknown queue discipline!")
 
     def _finish_service(self):
         server = np.argmin(self.service_finish_times)
@@ -91,11 +69,16 @@ class QRLSimulator:
         if len(self.packets_in_queue) == 0:
             return -1
         packet = self.packets_in_queue.popleft()
-        server = np.argmin(self.service_finish_times)
+        idle_servers = np.where(self.service_finish_times == np.inf)[0]
+        if len(idle_servers) == 0:
+            return -1
+
+        server = idle_servers[0]
         logging.info(f"Server #{server} is processing packet #{packet['packet_id']} arrived at {packet['arrival_time']}")
         # update service finish times
+        k = self.service_finish_times_index[server]
         self.service_finish_times_index[server] += 1
-        self.service_finish_times[server] = self.time + self.service_durations[ self.service_finish_times_index[server], server]
+        self.service_finish_times[server] = self.time + self.service_durations[k, server]
         self.num_of_packets_in_queue -= 1
 
     def _packet_arrival(self):
@@ -116,11 +99,16 @@ class QRLSimulator:
         if len(self.packets_in_queue) == 0:
             return -1
         packet = self.packets_in_queue.pop()
-        server = np.argmin(self.service_finish_times)
+        idle_servers = np.where(self.service_finish_times == np.inf)[0]
+        if len(idle_servers) == 0:
+            return -1
+
+        server = idle_servers[0]
         logging.info(f"Server #{server} is processing packet #{packet['packet_id']} arrived at {packet['arrival_time']}")
         # update service finish times
+        k = self.service_finish_times_index[server]
         self.service_finish_times_index[server] += 1
-        self.service_finish_times[server] = self.time + self.service_durations[ self.service_finish_times_index[server], server]
+        self.service_finish_times[server] = self.time + self.service_durations[k, server]
         self.num_of_packets_in_queue -= 1
 
     def _serveSIRO(self):
@@ -131,10 +119,35 @@ class QRLSimulator:
         packet = self.packets_in_queue[random_index]
         self.packets_in_queue[random_index] = self.packets_in_queue[-1]
         self.packets_in_queue.pop()
-        server = np.argmin(self.service_finish_times)
+        idle_servers = np.where(self.service_finish_times == np.inf)[0]
+        if len(idle_servers) == 0:
+            return -1
+
+        server = idle_servers[0]
         logging.info(f"Server #{server} is processing packet #{packet['packet_id']} arrived at {packet['arrival_time']}")
         # update service finish times
+        k = self.service_finish_times_index[server]
         self.service_finish_times_index[server] += 1
-        self.service_finish_times[server] = self.time + self.service_durations[ self.service_finish_times_index[server], server]
+        self.service_finish_times[server] = self.time + self.service_durations[k, server]
         self.num_of_packets_in_queue -= 1
+    
+    def step_one_event(self):
+        next_arrival_time = np.inf
+        next_service_finish_time = np.inf
 
+        if self.arrival_index < len(self.arrival_times):
+            next_arrival_time = self.arrival_times[self.arrival_index]
+
+        if self.service_finish_times is not None:
+            next_service_finish_time = np.min(self.service_finish_times)
+
+        if next_arrival_time == np.inf and next_service_finish_time == np.inf:
+            self.time = self.simulation_time
+            return
+        
+        if next_arrival_time <= next_service_finish_time:
+            self._packet_arrival()
+            self._serve()
+        else:
+            self._finish_service()
+            self._serve()
