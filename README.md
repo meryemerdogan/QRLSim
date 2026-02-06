@@ -1,21 +1,40 @@
-# QRLSim: Queueing System Simulation Framework (V1.1)
+# QRLSim: Queueing System Simulation Framework (v1.1.0)
 
-QRLSim is a Python-based simulation framework for modeling and analyzing queueing systems. Especially designed for training RL agents for computer networking problems.
+QRLSim is a Python based simulation framework for modeling and analyzing queueing systems, designed specifically for **reinforcement learning (RL) research in networking and active queue management (AQM)**.
 
 ## Features
-- Simulate M/M/1 queueing systems with customizable parameters.
-- Support for multiple servers and queue disciplines.
-- Easy-to-use API for defining arrival and service distributions.
-- Extendable framework for advanced queueing models.
+- Simulate classic queueing systems such as **M/M/1** with customizable parameters.
+- Built-in support for multiple servers and queue disciplines (FIFO, LIFO, SIRO).
+- Modular API for defining arrival and service distributions.
+- **Gymnasium-compatible RL environments** for training agents on queue control tasks.
+- Includes ready-to-run **Deep RL training scripts** (DQN, PPO) using Stable-Baselines3.
+- Extendable framework for advanced queueing models and networking experiments.
 
 ## File Descriptions
 
-### `QueueModel.py`
-This file defines the core components of the simulation, including:
+### `qrlsim/core/QueueModel.py`
+Defines the core queueing system components, including:
 - **Queue Disciplines**: FIFO, LIFO, and SIRO.
-- **Distribution Classes**: Abstract base class `Distribution` and its implementations:
-  - `Markovian`: Generates inter-arrival or service times based on an exponential distribution.
-  - `Deterministic`: Generates fixed inter-arrival or service times.
+- **Distribution Classes**:
+  - `Markovian`: Exponential inter-arrival/service times.
+  - `Deterministic`: Fixed inter-arrival/service times.
+
+### `qrlsim/core/QRLSimulator.py`
+Implements the main simulation logic:
+- Packet arrivals and service completions
+- Multi-server support
+- Queue discipline scheduling
+- Event-based stepping via `step_one_event()`
+
+### `qrlsim/aqm_envs/MM1_env.py`
+Provides a Gymnasium-compatible M/M/1 environment for RL:
+- Actions: keep or drop packets
+- Reward: delay + drop penalty
+
+### `train/`
+Includes reinforcement learning training scripts:
+- `train_dqn.py`
+- `train_ppo.py`
 
 ### `QRLSimulator.py`
 This file implements the main simulation logic, including:
